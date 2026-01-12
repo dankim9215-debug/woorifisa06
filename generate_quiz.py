@@ -6,37 +6,28 @@ from google import genai
 client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
 def generate_quizzes():
-    # [수정] woorifisa06 폴더 안의 모든 .md 파일을 찾습니다.
-    # 만약 폴더명이 대소문자를 구분한다면 정확히 맞춰주세요.
-    search_path = os.path.join('woorifisa06', '**', '*.md')
-    md_files = glob.glob(search_path, recursive=True)
+    # 1. 현재 파이썬 파일이 있는 위치(./)에서 .md 파일을 모두 찾습니다.
+    md_files = glob.glob('*.md') 
     
-    print(f"--- [디버그] 'woorifisa06' 폴더 내 검색 결과 ---")
-    print(f"검색 경로: {search_path}")
-    print(f"발견된 파일 총 {len(md_files)}개")
-    for f in md_files:
-        print(f"찾은 파일: {f}")
-    print("---------------------------------------")
-
     quiz_db = {}
+    print(f"--- [확인] 현재 위치의 md 파일들: {md_files} ---")
 
     if not md_files:
-        print("❌ 에러: 'woorifisa06' 폴더 내에 .md 파일이 없습니다!")
+        print("❌ 에러: 파이썬 파일 옆에 .md 파일이 하나도 없습니다!")
         return
 
     for file_path in md_files:
-        file_name = os.path.basename(file_path)
-        # 날짜 키 생성 (확장자 제거)
-        date_key = file_name.replace('.md', '').replace('.MD', '')
-        
-        with open(file_path, 'r', encoding='utf-8') as f:
-            content = f.read()
-            if len(content.strip()) < 20: continue
-
-        print(f"🚀 {date_key} 퀴즈 생성 중...")
+        # 파일 이름에서 날짜 키 추출 (예: 2026.01.09)
+        date_key = file_path.replace('.md', '').replace('.MD', '')
         
         try:
-            prompt = f"""
+            with open(file_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            # AI에게 퀴즈 생성 요청 (최신 모델 사용)
+            response = client.models.generate_content(
+                model="gemini-1.5-flash",
+                prompt = f"""
             당신은 IT 교육 전문가입니다. 아래 학습일지 내용을 분석하여 10개의 복습 퀴즈를 생성하세요.
 
             [출제 가이드라인]
@@ -50,18 +41,17 @@ def generate_quizzes():
             학습일지 내용:
             {content}
             """
-            response = client.models.generate_content(
-                model="gemini-1.5-flash",
-                contents=prompt
             )
             quiz_db[date_key] = response.text
+            print(f"✅ {date_key} 퀴즈 생성 성공!")
+            
         except Exception as e:
-            print(f"❌ {date_key} 생성 실패: {e}")
+            print(f"❌ {date_key} 처리 중 에러: {e}")
 
-    # 최종 결과 저장 (이 파일은 루트에 저장되어 웹에서 읽을 수 있게 합니다)
+    # 2. 결과 저장 (같은 위치에 quiz_db.json 생성)
     with open('quiz_db.json', 'w', encoding='utf-8') as f:
         json.dump(quiz_db, f, ensure_ascii=False, indent=4)
-    print(f"✅ 완료! {len(quiz_db)}개의 데이터 저장됨.")
+    print("🚀 모든 작업이 완료되었습니다!")
 
 if __name__ == "__main__":
     generate_quizzes()
