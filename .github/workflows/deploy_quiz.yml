@@ -15,7 +15,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 0 # 전체 이력을 가져와야 push 충돌이 적습니다.
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -30,6 +30,7 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: python generate_quiz.py
 
+      # [수정포인트] 충돌 방지를 위해 pull 후 push 하도록 설정
       - name: Commit and Push JSON
         run: |
           git config --global user.name "github-actions[bot]"
@@ -37,6 +38,7 @@ jobs:
           if [ -f quiz_db.json ]; then
             git add quiz_db.json
             git commit -m "Update quiz database [skip ci]" || echo "No changes to commit"
+            git pull --rebase origin main # 원격의 최신 변경사항을 먼저 합침
             git push origin main
           fi
 
