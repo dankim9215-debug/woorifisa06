@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>오늘의 복습 퀴즈</title>
+    <style>
+        body { font-family: sans-serif; line-height: 1.6; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .quiz-container { border: 1px solid #ddd; padding: 20px; border-radius: 8px; background: #f9f9f9; }
+        details { cursor: pointer; background: #eee; padding: 10px; border-radius: 4px; }
+        pre { background: #272822; color: #f8f8f2; padding: 10px; border-radius: 4px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>📝 복습 퀴즈</h1>
+    <div id="quiz-content" class="quiz-container">
+        {{QUIZ_CONTENT}}
+    </div>
+    <p><small>마지막 업데이트: {{UPDATE_TIME}}</small></p>
+</body>
+</html>
