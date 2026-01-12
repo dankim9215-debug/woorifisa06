@@ -5,41 +5,50 @@
     <title>FISA 학습 리마인드</title>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
-        body { font-family: sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background: #f4f7f6; }
-        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        input { padding: 10px; width: 200px; border: 1px solid #ddd; border-radius: 4px; }
-        button { padding: 10px 20px; background: #2c3e50; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        #quiz-content { margin-top: 30px; text-align: left; }
-        details { background: #eee; padding: 15px; border-radius: 8px; margin: 10px 0; }
+        body { font-family: 'Pretendard', sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background: #f0f2f5; color: #333; }
+        .card { background: white; padding: 40px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); text-align: center; }
+        h1 { color: #1a73e8; margin-bottom: 30px; }
+        .input-group { margin-bottom: 20px; }
+        input { padding: 12px; width: 180px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; margin: 5px; }
+        input:focus { border-color: #1a73e8; outline: none; }
+        button { padding: 12px 24px; background: #1a73e8; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; transition: 0.3s; }
+        button:hover { background: #1557b0; }
+        #quiz-content { margin-top: 40px; text-align: left; line-height: 1.6; border-top: 1px solid #eee; padding-top: 20px; }
+        details { background: #f8f9fa; padding: 15px; border-radius: 10px; margin: 15px 0; border: 1px solid #e9ecef; }
+        summary { font-weight: bold; cursor: pointer; color: #555; }
     </style>
 </head>
 <body>
     <div class="card">
         <h1>🚀 FISA AI 복습 퀴즈</h1>
-        <input type="password" id="pw" placeholder="비밀번호">
-        <input type="text" id="date" placeholder="날짜 (예: 2026.01.09)">
-        <button onclick="loadQuiz()">퀴즈 보기</button>
+        <div class="input-group">
+            <input type="password" id="pw" placeholder="비밀번호">
+            <input type="text" id="date" placeholder="2026.01.09">
+            <button onclick="loadQuiz()">퀴즈 불러오기</button>
+        </div>
         <div id="quiz-content"></div>
     </div>
 
     <script>
         async function loadQuiz() {
             const pw = document.getElementById('pw').value;
-            const date = document.getElementById('date').value;
+            const dateInput = document.getElementById('date').value.trim().toLowerCase();
             
-            if(pw !== 'fisa1234!') return alert('비밀번호가 틀렸습니다.');
+            if(pw !== 'fisa1234!') return alert('비밀번호가 올바르지 않습니다.');
             
             try {
-                const res = await fetch('./quiz_db.json');
+                // 캐시 방지를 위해 타임스탬프 추가
+                const res = await fetch(`./quiz_db.json?v=${new Date().getTime()}`);
                 const data = await res.json();
                 
-                if(data[date]) {
-                    document.getElementById('quiz-content').innerHTML = marked.parse(data[date]);
+                if(data[dateInput]) {
+                    document.getElementById('quiz-content').innerHTML = marked.parse(data[dateInput]);
                 } else {
-                    alert('해당 날짜의 퀴즈가 없습니다. Actions 로그를 확인하세요.');
+                    const keys = Object.keys(data).join(', ');
+                    alert(`해당 날짜의 퀴즈를 찾을 수 없습니다.\n사용 가능한 날짜: ${keys}`);
                 }
             } catch(e) {
-                alert('데이터를 불러올 수 없습니다.');
+                alert('데이터 파일을 읽어올 수 없습니다. GitHub Actions가 완료되었는지 확인해주세요.');
             }
         }
     </script>
