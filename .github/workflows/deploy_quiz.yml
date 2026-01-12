@@ -24,7 +24,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install google-generativeai
+          pip install -U google-generativeai
 
       - name: Generate Quiz Database
         env:
