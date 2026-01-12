@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 학습 리마인드 퀴즈</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        :root { --primary: #3498db; --success: #2ecc71; --dark: #2c3e50; --bg: #f8f9fa; }
+        body { font-family: 'Pretendard', -apple-system, sans-serif; background: var(--bg); color: var(--dark); line-height: 1.6; margin: 0; padding: 20px; }
+        .container { max-width: 850px; margin: 0 auto; background: white; padding: 40px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
+        h1 { text-align: center; color: var(--dark); margin-bottom: 30px; font-weight: 800; }
+        
+        .setup-box { background: #ffffff; padding: 25px; border-radius: 12px; margin-bottom: 30px; border: 2px solid #edf2f7; }
+        .input-group { display: flex; flex-direction: column; gap: 12px; }
+        label { font-weight: 600; font-size: 14px; color: #4a5568; }
+        input { padding: 14px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 16px; transition: border 0.2s; }
+        input:focus { border-color: var(--primary); outline: none; }
+        
+        button { padding: 16px; background: var(--dark); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px; }
+        button:hover { background: #1a252f; transform: translateY(-1px); }
+        button:disabled { background: #cbd5e0; cursor: not-allowed; }
+
+        #quiz-display { margin-top: 40px; border-top: 2px solid #f1f5f9; padding-top: 20px; }
+        
+        /* 퀴즈 결과 스타일 */
+        details { background: #f8fafc; padding: 20px; border-radius: 10px; margin: 15px 0; border: 1px solid #e2e8f0; }
+        summary { font-weight: 700; color: var(--primary); cursor: pointer; outline: none; }
+        pre { background: #1e1e1e !important; padding: 15px; border-radius: 8px; overflow-x: auto; margin: 15px 0; }
+        code { font-family: 'Fira Code', 'Courier New', monospace; font-size: 14px; }
+        blockquote { border-left: 4px solid var(--success); margin: 0; padding-left: 15px; color: #4a5568; }
+        
+        .loading { text-align: center; display: none; padding: 40px 0; }
+        .spinner { border: 4px solid rgba(0,0,0,0.05); width: 40px; height: 40px; border-radius: 50%; border-left-color: var(--primary); animation: spin 1s linear infinite; margin: 0 auto 20px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🚀 복습 챌린지</h1>
+    
+    <div class="setup-box">
+        <div class="input-group">
+            <label for="apiKey">Gemini API Key</label>
+            <input type="password" id="apiKey" placeholder="AI Studio 키를 입력하세요">
+            
+            <label for="dateInput">학습일지 날짜 (파일명)</label>
+            <input type="text" id="dateInput" placeholder="예: 2026.01.08">
+            
+            <button id="genBtn" onclick="generateQuiz()">새로운 문제 생성</button>
+        </div>
+    </div>
+
+    <div id="loading" class="loading">
+        <div class="spinner"></div>
+        <p><strong>일지를 분석하여 문제를 설계하고 있습니다...</strong><br>잠시만 기다려 주세요.</p>
+    </div>
+
+    <div id="quiz-display">
+        </div>
+</div>
+
+<script>
+    // 마크다운 설정 및 하이라이팅 연동
+    marked.setOptions({
+        highlight: function(code, lang) {
+            const language = hljs.getLanguage(lang) ? lang : 'python';
+            return hljs.highlight(code, { language }).value;
+        },
+        langPrefix: 'hljs language-'
+    });
+
+    async function generateQuiz() {
+        const apiKey = document.getElementById('apiKey').value;
+        const date = document.getElementById('dateInput').value;
+        const display = document.getElementById('quiz-display');
+        const loading = document.getElementById('loading');
+        const btn = document.getElementById('genBtn');
+
+        if (!apiKey || !date) {
+            alert("API 키와 날짜를 입력해주세요.");
+            return;
+        }
+
+        display.innerHTML = '';
+        loading.style.display = 'block';
+        btn.disabled = true;
+
+        try {
+            const githubUser = "dankim915-debug"; 
+            const repoName = "dankim9215-debug/woorifisa06";
+            const fileUrl = `https://raw.githubusercontent.com/${githubUser}/${repoName}/main/${date}.md`;
+            
+            const fileRes = await fetch(fileUrl);
+            if (!fileRes.ok) throw new Error("해당 날짜의 학습일지를 찾을 수 없습니다.");
+            const logContent = await fileRes.text();
+
+            const prompt = `당신은 실무 중심의 컴퓨터 교육 전문가입니다. 
+            제공된 학습 내용을 바탕으로 총 10개의 문제를 생성하세요.
+            
+            [문제 구성 방식]
+            1. 객관식 (5문제): 개념의 정확한 이해 확인
+            2. 단답형 (2문제): 주요 용어 및 문법 확인
+            3. **코딩 주관식 (3문제)**: 학습한 로직이나 문법을 사용하여 직접 코드를 작성하는 문제. 
+               - 예: "OO 클래스를 상속받아 XX 기능을 수행하는 메서드를 작성하시오."
+               - 예: "제시된 리스트를 컴프리헨션을 사용하여 한 줄로 변환하시오."
+            
+            [출력 가이드라인]
+            - 모든 문제는 마크다운 형식을 준수할 것.
+            - 정답과 해설(모범 답안 코드 포함)은 반드시 <details><summary>정답 및 해설 확인하기</summary> 태그로 감싸서 숨길 것.
+            - 코딩 문제의 모범 답안은 반드시 \`\`\`python 코드 블록을 사용할 것.
+            
+            학습 내용:
+            ${logContent}`;
+
+            const aiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+            });
+
+            const aiData = await aiRes.json();
+            if (aiData.error) throw new Error(aiData.error.message);
+            
+            const quizMarkdown = aiData.candidates[0].content.parts[0].text;
+            display.innerHTML = marked.parse(quizMarkdown);
+
+            document.querySelectorAll('pre code').forEach((el) => {
+                hljs.highlightElement(el);
+            });
+
+        } catch (error) {
+            display.innerHTML = `<p style="color:#e53e3e; text-align:center;"><strong>오류:</strong> ${error.message}</p>`;
+        } finally {
+            loading.style.display = 'none';
+            btn.disabled = false;
+        }
+    }
+</script>
+
+</body>
+</html>
