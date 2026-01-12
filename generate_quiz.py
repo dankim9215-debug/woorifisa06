@@ -6,29 +6,37 @@ from google import genai
 client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
 def generate_quizzes():
-    # 1. 하위 모든 폴더에서 .md 파일을 찾도록 경로 확장
-    md_files = glob.glob('**/*.md', recursive=True)
+    # [수정] woorifisa06 폴더 안의 모든 .md 파일을 찾습니다.
+    # 만약 폴더명이 대소문자를 구분한다면 정확히 맞춰주세요.
+    search_path = os.path.join('woorifisa06', '**', '*.md')
+    md_files = glob.glob(search_path, recursive=True)
     
-    print(f"발견된 마크다운 파일 목록: {md_files}") # 어떤 파일을 찾았는지 로그에 찍힘
-    
+    print(f"--- [디버그] 'woorifisa06' 폴더 내 검색 결과 ---")
+    print(f"검색 경로: {search_path}")
+    print(f"발견된 파일 총 {len(md_files)}개")
+    for f in md_files:
+        print(f"찾은 파일: {f}")
+    print("---------------------------------------")
+
     quiz_db = {}
 
     if not md_files:
-        print("❌ 마크다운 파일을 하나도 찾지 못했습니다. 폴더 구조를 확인하세요.")
+        print("❌ 에러: 'woorifisa06' 폴더 내에 .md 파일이 없습니다!")
         return
 
     for file_path in md_files:
-        # 파일명만 추출하여 날짜 키 생성
-        date_key = os.path.basename(file_path).replace('.md', '').replace('.MD', '')
-        
-        print(f"Processing: {date_key} (Path: {file_path})")
+        file_name = os.path.basename(file_path)
+        # 날짜 키 생성 (확장자 제거)
+        date_key = file_name.replace('.md', '').replace('.MD', '')
         
         with open(file_path, 'r', encoding='utf-8') as f:
             content = f.read()
-            if len(content.strip()) < 10: continue # 빈 파일은 건너뜀
+            if len(content.strip()) < 20: continue
 
-            try:
-                prompt = f"""
+        print(f"🚀 {date_key} 퀴즈 생성 중...")
+        
+        try:
+            prompt = f"""
             당신은 IT 교육 전문가입니다. 아래 학습일지 내용을 분석하여 10개의 복습 퀴즈를 생성하세요.
 
             [출제 가이드라인]
@@ -42,17 +50,18 @@ def generate_quizzes():
             학습일지 내용:
             {content}
             """
-                response = client.models.generate_content(
-                    model="gemini-1.5-flash",
-                    contents=prompt
-                )
-                quiz_db[date_key] = response.text
-            except Exception as e:
-                print(f"오류 ({date_key}): {e}")
+            response = client.models.generate_content(
+                model="gemini-1.5-flash",
+                contents=prompt
+            )
+            quiz_db[date_key] = response.text
+        except Exception as e:
+            print(f"❌ {date_key} 생성 실패: {e}")
 
+    # 최종 결과 저장 (이 파일은 루트에 저장되어 웹에서 읽을 수 있게 합니다)
     with open('quiz_db.json', 'w', encoding='utf-8') as f:
         json.dump(quiz_db, f, ensure_ascii=False, indent=4)
-    print(f"✅ 업데이트 완료! 생성된 퀴즈 개수: {len(quiz_db)}")
+    print(f"✅ 완료! {len(quiz_db)}개의 데이터 저장됨.")
 
 if __name__ == "__main__":
     generate_quizzes()
