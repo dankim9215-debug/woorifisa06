@@ -1,0 +1,33 @@
+name: Deploy AI Quiz Web
+
+on:
+  push:
+    branches: [ main ]  # 옵시디언 자동 커밋이 일어나는 브랜치 명 확인 (main/master)
+  workflow_dispatch:      # 수동으로도 실행할 수 있게 버튼을 만듦
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install google-generativeai
+
+      - name: Generate Quiz Database
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }} 
+        run: python generate_quiz.py
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./ # 루트 폴더의 index.html과 quiz_db.json을 배포
