@@ -1,25 +1,34 @@
 import os
 import glob
 import json
-from google import genai # 최신 라이브러리 사용 권장
+from google import genai
 
-# 1. API 설정
-# 최신 라이브러리 방식에 맞춰 클라이언트를 초기화합니다.
 client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
 def generate_quizzes():
-    md_files = glob.glob('./*.md')
+    # 1. 하위 모든 폴더에서 .md 파일을 찾도록 경로 확장
+    md_files = glob.glob('**/*.md', recursive=True)
+    
+    print(f"발견된 마크다운 파일 목록: {md_files}") # 어떤 파일을 찾았는지 로그에 찍힘
+    
     quiz_db = {}
 
+    if not md_files:
+        print("❌ 마크다운 파일을 하나도 찾지 못했습니다. 폴더 구조를 확인하세요.")
+        return
+
     for file_path in md_files:
-        date_key = os.path.basename(file_path).replace('.md', '')
-        print(f"[{date_key}] 퀴즈 생성 중...")
+        # 파일명만 추출하여 날짜 키 생성
+        date_key = os.path.basename(file_path).replace('.md', '').replace('.MD', '')
+        
+        print(f"Processing: {date_key} (Path: {file_path})")
         
         with open(file_path, 'r', encoding='utf-8') as f:
             content = f.read()
-            
-            # 2. 보강된 프롬프트 설계
-            prompt = f"""
+            if len(content.strip()) < 10: continue # 빈 파일은 건너뜀
+
+            try:
+                prompt = f"""
             당신은 IT 교육 전문가입니다. 아래 학습일지 내용을 분석하여 10개의 복습 퀴즈를 생성하세요.
 
             [출제 가이드라인]
@@ -33,21 +42,17 @@ def generate_quizzes():
             학습일지 내용:
             {content}
             """
-            
-            try:
-                # 3. 모델명을 gemini-1.5-flash로 변경하여 404 에러 해결
                 response = client.models.generate_content(
                     model="gemini-1.5-flash",
                     contents=prompt
                 )
                 quiz_db[date_key] = response.text
             except Exception as e:
-                print(f"오류 발생 ({date_key}): {e}")
+                print(f"오류 ({date_key}): {e}")
 
-    # JSON 데이터베이스 저장
     with open('quiz_db.json', 'w', encoding='utf-8') as f:
         json.dump(quiz_db, f, ensure_ascii=False, indent=4)
-    print("✅ 퀴즈 데이터베이스 업데이트 완료!")
+    print(f"✅ 업데이트 완료! 생성된 퀴즈 개수: {len(quiz_db)}")
 
 if __name__ == "__main__":
     generate_quizzes()
