@@ -6,52 +6,51 @@ from google import genai
 client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
 def generate_quizzes():
-    # 1. 현재 파이썬 파일이 있는 위치(./)에서 .md 파일을 모두 찾습니다.
-    md_files = glob.glob('*.md') 
+    # 1. 모든 가능성을 열어두고 파일 검색
+    md_files = glob.glob('*.md') + glob.glob('*.MD')
+    
+    print(f"--- [DEBUG] 발견된 파일 목록: {md_files} ---")
     
     quiz_db = {}
-    print(f"--- [확인] 현재 위치의 md 파일들: {md_files} ---")
-
-    if not md_files:
-        print("❌ 에러: 파이썬 파일 옆에 .md 파일이 하나도 없습니다!")
-        return
 
     for file_path in md_files:
-        # 파일 이름에서 날짜 키 추출 (예: 2026.01.09)
-        date_key = file_path.replace('.md', '').replace('.MD', '')
+        # 2. 파일 이름 분석 로그
+        file_name = os.path.basename(file_path)
+        date_key = file_name.replace('.md', '').replace('.MD', '')
+        print(f"--- [DEBUG] 현재 처리 중인 파일: {file_name} (Key: {date_key}) ---")
         
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
                 content = f.read()
             
-            # AI에게 퀴즈 생성 요청 (최신 모델 사용)
+            print(f"--- [DEBUG] 파일 내용 길이: {len(content)} 자 ---")
+            
+            if len(content.strip()) < 10:
+                print(f"⚠️ {file_name} 내용이 너무 짧아 스킵합니다.")
+                continue
+
+            # 3. AI 요청 및 응답 확인
+            print(f"🚀 Gemini AI에게 {date_key} 퀴즈 생성 요청 중...")
             response = client.models.generate_content(
                 model="gemini-1.5-flash",
-                prompt = f"""
-            당신은 IT 교육 전문가입니다. 아래 학습일지 내용을 분석하여 10개의 복습 퀴즈를 생성하세요.
-
-            [출제 가이드라인]
-            1. 난이도: 중급 (단순 암기보다 원리 이해를 묻는 문제 위주)
-            2. 구성: 객관식 5개, 단답형 2개, 코딩 주관식 3개
-            3. 핵심 키워드: 클래스 상속, 메서드 타입(static/class), 캡슐화 등 어려운 개념을 우선적으로 포함
-            4. 출력 형식: 
-               - 사용자가 정답을 바로 보지 못하도록 <details><summary>정답 확인하기</summary>...내용...</details> 태그를 사용
-               - 코딩 문제의 모범 답안은 반드시 ```python 코드 블록을 사용
-
-            학습일지 내용:
-            {content}
-            """
+                contents=f"학습 내용을 바탕으로 10문제 복습 퀴즈를 만드세요: {content}"
             )
-            quiz_db[date_key] = response.text
-            print(f"✅ {date_key} 퀴즈 생성 성공!")
             
-        except Exception as e:
-            print(f"❌ {date_key} 처리 중 에러: {e}")
+            if response and response.text:
+                quiz_db[date_key] = response.text
+                print(f"✅ {date_key} 생성 성공! (데이터 크기: {len(response.text)})")
+            else:
+                print(f"❌ {date_key} AI 응답이 비어있습니다.")
 
-    # 2. 결과 저장 (같은 위치에 quiz_db.json 생성)
+        except Exception as e:
+            print(f"❌ {date_key} 에러 발생: {str(e)}")
+
+    # 4. 최종 저장 전 상태 확인
+    print(f"--- [DEBUG] 최종 JSON에 담긴 날짜들: {list(quiz_db.keys())} ---")
+    
     with open('quiz_db.json', 'w', encoding='utf-8') as f:
         json.dump(quiz_db, f, ensure_ascii=False, indent=4)
-    print("🚀 모든 작업이 완료되었습니다!")
+    print("🚀 모든 과정 종료 및 파일 저장 완료")
 
 if __name__ == "__main__":
     generate_quizzes()
