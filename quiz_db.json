@@ -1,11 +1,11 @@
 {
-    "2026.01.08": "실패 에러: 404 NOT_FOUND. {'error': {'code': 404, 'message': 'models/gemini-1.5-flash is not found for API version v1, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.', 'status': 'NOT_FOUND'}}",
-    "2025.12.31": "실패 에러: 404 NOT_FOUND. {'error': {'code': 404, 'message': 'models/gemini-1.5-flash is not found for API version v1, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.', 'status': 'NOT_FOUND'}}",
-    "2026.01.05": "실패 에러: 404 NOT_FOUND. {'error': {'code': 404, 'message': 'models/gemini-1.5-flash is not found for API version v1, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.', 'status': 'NOT_FOUND'}}",
-    "2026.01.12": "실패 에러: 404 NOT_FOUND. {'error': {'code': 404, 'message': 'models/gemini-1.5-flash is not found for API version v1, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.', 'status': 'NOT_FOUND'}}",
-    "2026.01.09": "실패 에러: 404 NOT_FOUND. {'error': {'code': 404, 'message': 'models/gemini-1.5-flash is not found for API version v1, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.', 'status': 'NOT_FOUND'}}",
-    "2025.12.30": "실패 에러: 404 NOT_FOUND. {'error': {'code': 404, 'message': 'models/gemini-1.5-flash is not found for API version v1, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.', 'status': 'NOT_FOUND'}}",
-    "2026.01.07": "실패 에러: 404 NOT_FOUND. {'error': {'code': 404, 'message': 'models/gemini-1.5-flash is not found for API version v1, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.', 'status': 'NOT_FOUND'}}",
-    "2026.01.02": "실패 에러: 404 NOT_FOUND. {'error': {'code': 404, 'message': 'models/gemini-1.5-flash is not found for API version v1, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.', 'status': 'NOT_FOUND'}}",
-    "2026.01.06": "실패 에러: 404 NOT_FOUND. {'error': {'code': 404, 'message': 'models/gemini-1.5-flash is not found for API version v1, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.', 'status': 'NOT_FOUND'}}"
+    "2026.01.08": "모든 모델 후보군이 404 에러로 실패했습니다. API 키의 모델 권한을 확인하세요.",
+    "2025.12.31": "모든 모델 후보군이 404 에러로 실패했습니다. API 키의 모델 권한을 확인하세요.",
+    "2026.01.05": "모든 모델 후보군이 404 에러로 실패했습니다. API 키의 모델 권한을 확인하세요.",
+    "2026.01.12": "모든 모델 후보군이 404 에러로 실패했습니다. API 키의 모델 권한을 확인하세요.",
+    "2026.01.09": "모든 모델 후보군이 404 에러로 실패했습니다. API 키의 모델 권한을 확인하세요.",
+    "2025.12.30": "모든 모델 후보군이 404 에러로 실패했습니다. API 키의 모델 권한을 확인하세요.",
+    "2026.01.07": "모든 모델 후보군이 404 에러로 실패했습니다. API 키의 모델 권한을 확인하세요.",
+    "2026.01.02": "모든 모델 후보군이 404 에러로 실패했습니다. API 키의 모델 권한을 확인하세요.",
+    "2026.01.06": "모든 모델 후보군이 404 에러로 실패했습니다. API 키의 모델 권한을 확인하세요."
 }
