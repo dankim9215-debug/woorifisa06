@@ -3,19 +3,19 @@ name: Deploy AI Quiz Web
 on:
   push:
     branches: [ main ]
-  workflow_dispatch: # 수동 실행 버튼 활성화
+  workflow_dispatch:
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # 리포지토리에 파일을 쓸 수 있는 권한
+      contents: write
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # 전체 이력을 가져와 push 충돌 방지
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -24,32 +24,25 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install -U google-generativeai
+          pip install -U google-genai
 
       - name: Generate Quiz Database
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: python generate_quiz.py
 
-      # [중요] 생성된 quiz_db.json을 리포지토리에 물리적으로 저장하는 단계
       - name: Commit and Push JSON
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
-          # 파일이 실제로 생성되었는지 확인 후 진행
           if [ -f quiz_db.json ]; then
             git add quiz_db.json
             git commit -m "Update quiz database [skip ci]" || echo "No changes to commit"
-            
-            # 충돌 방지: 원격의 변경사항을 먼저 합친 후 푸시
             git pull --rebase origin main
             git push origin main
-          else
-            echo "quiz_db.json 파일이 생성되지 않아 Push를 건너뜁니다."
           fi
 
-      # GitHub Pages 배포 단계
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
