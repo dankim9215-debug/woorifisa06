@@ -1,7 +1,7 @@
 import os
 import glob
 import json
-import time # [추가] 시간 지연을 위해 필요합니다.
+import time
 from google import genai
 
 client = genai.Client(
@@ -23,15 +23,18 @@ def generate_quizzes():
             
             if len(content.strip()) < 50: continue
             
-            # [핵심] 429 에러 방지를 위해 요청 전 6초간 휴식
-            print(f"💤 {date_key} 생성 전 잠시 대기 중 (6초)...")
-            time.sleep(6) 
+            # [최적화] 대기 시간을 12초로 늘려 분당 요청 수(RPM)를 안전하게 관리합니다.
+            print(f"💤 {date_key} 생성 전 충분히 대기 중 (12초)...")
+            time.sleep(12) 
             
-            print(f"🚀 {date_key} 생성 시도 중 (사용 모델: gemini-2.0-flash)...")
+            print(f"🚀 {date_key} 생성 시도 중...")
+            
+            # [최적화] 입력 토큰 양을 줄이기 위해 내용을 3,000자로 대폭 제한합니다.
+            summary_content = content[:3000]
             
             response = client.models.generate_content(
                 model='gemini-2.0-flash',
-                contents=f"다음 학습 내용을 바탕으로 복습 퀴즈 10문제를 생성해줘. 정답은 <details> 태그로 가려줘: \n\n {content[:10000]}"
+                contents=f"다음 내용을 바탕으로 핵심 퀴즈 5문제만 만드세요. 정답은 <details>로 가리세요: \n\n {summary_content}"
             )
             
             if response and response.text:
@@ -39,9 +42,10 @@ def generate_quizzes():
                 print(f"✅ {date_key} 생성 성공!")
             
         except Exception as e:
-            # 할당량 초과 시 1분 대기 후 재시도할 수도 있지만, 우선 로그를 남깁니다.
-            quiz_db[date_key] = f"실패 에러: {str(e)}"
+            # 에러 발생 시 30초를 더 쉬고 다음 파일로 넘어갑니다 (할당량 회복 시간 벌기)
             print(f"❌ {date_key} 실패: {e}")
+            quiz_db[date_key] = f"할당량 초과로 생성 실패. 잠시 후 다시 시도하세요."
+            time.sleep(30)
 
     with open('quiz_db.json', 'w', encoding='utf-8') as f:
         json.dump(quiz_db, f, ensure_ascii=False, indent=4)
