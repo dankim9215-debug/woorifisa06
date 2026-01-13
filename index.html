@@ -1,96 +1,56 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FISA 학습 리마인드 퀴즈</title>
+    <title>FISA 학습 리마인드</title>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <style>
-        :root { --primary: #3498db; --dark: #2c3e50; --bg: #f8f9fa; }
-        body { font-family: 'Pretendard', sans-serif; background: var(--bg); color: var(--dark); line-height: 1.6; margin: 0; padding: 20px; }
-        .container { max-width: 800px; margin: 20px auto; background: white; padding: 40px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); text-align: center; }
-        .setup-box { background: #ffffff; padding: 25px; border-radius: 12px; border: 2px solid #edf2f7; margin-bottom: 30px; }
-        .input-group { display: flex; flex-direction: column; gap: 15px; text-align: left; }
-        input { padding: 14px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 16px; }
-        button { padding: 16px; background: var(--dark); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        button:hover { background: #1a252f; }
-        #quiz-display { margin-top: 40px; text-align: left; border-top: 2px solid #f1f5f9; padding-top: 20px; display: none; }
-        details { background: #f8fafc; padding: 20px; border-radius: 10px; margin: 15px 0; border: 1px solid #e2e8f0; cursor: pointer; }
-        pre { background: #1e1e1e !important; padding: 15px; border-radius: 8px; overflow-x: auto; }
+        body { font-family: 'Pretendard', sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background: #f0f2f5; color: #333; }
+        .card { background: white; padding: 40px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); text-align: center; }
+        h1 { color: #1a73e8; margin-bottom: 30px; }
+        .input-group { margin-bottom: 20px; }
+        input { padding: 12px; width: 180px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; margin: 5px; }
+        input:focus { border-color: #1a73e8; outline: none; }
+        button { padding: 12px 24px; background: #1a73e8; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; transition: 0.3s; }
+        button:hover { background: #1557b0; }
+        #quiz-content { margin-top: 40px; text-align: left; line-height: 1.6; border-top: 1px solid #eee; padding-top: 20px; }
+        details { background: #f8f9fa; padding: 15px; border-radius: 10px; margin: 15px 0; border: 1px solid #e9ecef; }
+        summary { font-weight: bold; cursor: pointer; color: #555; }
     </style>
 </head>
 <body>
-
-<div class="container">
-    <h1>🚀 FISA AI 복습 챌린지</h1>
-    
-    <div class="setup-box">
+    <div class="card">
+        <h1>🚀 FISA AI 복습 퀴즈</h1>
         <div class="input-group">
-            <label>🔑 서비스 비밀번호</label>
-            <input type="password" id="userPass" placeholder="fisa****">
-            
-            <label>📅 학습 날짜 입력</label>
-            <input type="text" id="dateInput" placeholder="예: 2026.01.08">
-            
-            <button onclick="checkAuth()">퀴즈 불러오기</button>
+            <input type="password" id="pw" placeholder="비밀번호">
+            <input type="text" id="date" placeholder="2026.01.09">
+            <button onclick="loadQuiz()">퀴즈 불러오기</button>
         </div>
+        <div id="quiz-content"></div>
     </div>
 
-    <div id="quiz-display">
-        </div>
-</div>
-
-<script>
-    // 사용자가 요청한 비밀번호 설정
-    const MY_SECRET = "fisa1234!";
-
-    marked.setOptions({
-        highlight: function(code, lang) {
-            return hljs.highlightAuto(code).value;
-        }
-    });
-
-    async function checkAuth() {
-        const inputPass = document.getElementById('userPass').value;
-        const date = document.getElementById('dateInput').value;
-        const display = document.getElementById('quiz-display');
-
-        if (inputPass !== MY_SECRET) {
-            alert("비밀번호가 틀렸습니다.");
-            return;
-        }
-
-        if (!date) {
-            alert("날짜를 입력해주세요.");
-            return;
-        }
-
-        try {
-            // GitHub Actions에 의해 생성된 JSON 파일 경로
-            // GitHub Pages 환경에서는 같은 저장소 내 파일을 바로 호출 가능합니다.
-            const response = await fetch('./quiz_db.json');
-            if (!response.ok) throw new Error("퀴즈 데이터 파일을 찾을 수 없습니다. (Actions 실행 확인 필요)");
+    <script>
+        async function loadQuiz() {
+            const pw = document.getElementById('pw').value;
+            const dateInput = document.getElementById('date').value.trim().toLowerCase();
             
-            const data = await response.json();
+            if(pw !== 'fisa1234!') return alert('비밀번호가 올바르지 않습니다.');
             
-            if (data[date]) {
-                display.style.display = 'block';
-                display.innerHTML = marked.parse(data[date]);
+            try {
+                // 캐시 방지를 위해 타임스탬프 추가
+                const res = await fetch(`./quiz_db.json?v=${new Date().getTime()}`);
+                const data = await res.json();
                 
-                // 코드 하이라이팅 적용
-                document.querySelectorAll('pre code').forEach((el) => {
-                    hljs.highlightElement(el);
-                });
-            } else {
-                alert("해당 날짜(" + date + ")의 퀴즈 데이터가 없습니다.\n파일명이 정확한지 확인해 주세요.");
+                if(data[dateInput]) {
+                    document.getElementById('quiz-content').innerHTML = marked.parse(data[dateInput]);
+                } else {
+                    const keys = Object.keys(data).join(', ');
+                    alert(`해당 날짜의 퀴즈를 찾을 수 없습니다.\n사용 가능한 날짜: ${keys}`);
+                }
+            } catch(e) {
+                alert('데이터 파일을 읽어올 수 없습니다. GitHub Actions가 완료되었는지 확인해주세요.');
             }
-        } catch (error) {
-            alert("오류 발생: " + error.message);
         }
-    }
-</script>
+    </script>
 </body>
 </html>

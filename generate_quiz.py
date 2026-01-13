@@ -1,53 +1,54 @@
 import os
 import glob
 import json
-from google import genai # 최신 라이브러리 사용 권장
+import time
+from google import genai
 
-# 1. API 설정
-# 최신 라이브러리 방식에 맞춰 클라이언트를 초기화합니다.
-client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+client = genai.Client(
+    api_key=os.environ["GEMINI_API_KEY"],
+    http_options={'api_version': 'v1beta'}
+)
 
 def generate_quizzes():
-    md_files = glob.glob('./*.md')
+    md_files = glob.glob('*.md') + glob.glob('*.MD')
     quiz_db = {}
 
     for file_path in md_files:
-        date_key = os.path.basename(file_path).replace('.md', '')
-        print(f"[{date_key}] 퀴즈 생성 중...")
+        file_name = os.path.basename(file_path)
+        date_key = file_name.lower().replace('.md', '').strip()
         
-        with open(file_path, 'r', encoding='utf-8') as f:
-            content = f.read()
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                content = f.read()
             
-            # 2. 보강된 프롬프트 설계
-            prompt = f"""
-            당신은 IT 교육 전문가입니다. 아래 학습일지 내용을 분석하여 10개의 복습 퀴즈를 생성하세요.
-
-            [출제 가이드라인]
-            1. 난이도: 중급 (단순 암기보다 원리 이해를 묻는 문제 위주)
-            2. 구성: 객관식 5개, 단답형 2개, 코딩 주관식 3개
-            3. 핵심 키워드: 클래스 상속, 메서드 타입(static/class), 캡슐화 등 어려운 개념을 우선적으로 포함
-            4. 출력 형식: 
-               - 사용자가 정답을 바로 보지 못하도록 <details><summary>정답 확인하기</summary>...내용...</details> 태그를 사용
-               - 코딩 문제의 모범 답안은 반드시 ```python 코드 블록을 사용
-
-            학습일지 내용:
-            {content}
-            """
+            if len(content.strip()) < 50: continue
             
-            try:
-                # 3. 모델명을 gemini-1.5-flash로 변경하여 404 에러 해결
-                response = client.models.generate_content(
-                    model="gemini-1.5-flash",
-                    contents=prompt
-                )
+            # [최적화] 대기 시간을 12초로 늘려 분당 요청 수(RPM)를 안전하게 관리합니다.
+            print(f"💤 {date_key} 생성 전 충분히 대기 중 (12초)...")
+            time.sleep(12) 
+            
+            print(f"🚀 {date_key} 생성 시도 중...")
+            
+            # [최적화] 입력 토큰 양을 줄이기 위해 내용을 3,000자로 대폭 제한합니다.
+            summary_content = content[:3000]
+            
+            response = client.models.generate_content(
+                model='gemini-2.0-flash',
+                contents=f"다음 내용을 바탕으로 핵심 퀴즈 5문제만 만드세요. 정답은 <details>로 가리세요: \n\n {summary_content}"
+            )
+            
+            if response and response.text:
                 quiz_db[date_key] = response.text
-            except Exception as e:
-                print(f"오류 발생 ({date_key}): {e}")
+                print(f"✅ {date_key} 생성 성공!")
+            
+        except Exception as e:
+            # 에러 발생 시 30초를 더 쉬고 다음 파일로 넘어갑니다 (할당량 회복 시간 벌기)
+            print(f"❌ {date_key} 실패: {e}")
+            quiz_db[date_key] = f"할당량 초과로 생성 실패. 잠시 후 다시 시도하세요."
+            time.sleep(30)
 
-    # JSON 데이터베이스 저장
     with open('quiz_db.json', 'w', encoding='utf-8') as f:
         json.dump(quiz_db, f, ensure_ascii=False, indent=4)
-    print("✅ 퀴즈 데이터베이스 업데이트 완료!")
 
 if __name__ == "__main__":
     generate_quizzes()
