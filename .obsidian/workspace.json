@@ -55,12 +55,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "2026.01.13.md",
+                "file": "2026.01.15.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "2026.01.13"
+              "title": "2026.01.15"
             }
           }
         ],
@@ -239,11 +239,14 @@
   },
   "active": "b1ead5efd2c73c8b",
   "lastOpenFiles": [
+    "2026.01.14.md",
+    "2026.01.15.md",
+    "2026.01.13.md",
+    "quiz_db.json",
     "2026.01.05.md",
     "2026.01.06.md",
     "2026.01.07.md",
     "2026.01.08.md",
-    "2026.01.13.md",
     "2026.01.12.md",
     "index.html",
     "generate_quiz.py",
